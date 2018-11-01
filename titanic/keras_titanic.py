@@ -14,8 +14,8 @@ __author__ = 'Happiness'
 
 import os
 
+import numpy as np
 import pandas as pd
-import tensorflow as tf
 import tensorflow.keras as keras
 from sklearn.model_selection import train_test_split
 
@@ -77,9 +77,46 @@ def splitData(datas, labels, splite):
     return train_test_split(datas, labels, test_size=splite, random_state=42)
 
 
+# def feature():
+#     feature_columns = []
+#     # Pclass 分类特征列
+#     feature_columns.append(tf.feature_column.numeric_column(key='Pclass', dtype=tf.int32))
+#     # sex 分类词汇列
+#     feature_columns.append(tf.feature_column.indicator_column(
+#         tf.feature_column.categorical_column_with_vocabulary_list(key='Sex', vocabulary_list=['male', 'female'])))
+#     # Age 数值列
+#     feature_columns.append(
+#         tf.feature_column.numeric_column(key='Age', normalizer_fn=lambda x: (x - mean_age) / std_age))
+#     # SibSp 数值列
+#     feature_columns.append(tf.feature_column.numeric_column(key='SibSp'))
+#     # Parch 数值列
+#     feature_columns.append(tf.feature_column.numeric_column(key='Parch'))
+#     # Ticket 经过哈希处理的列
+#     # feature_columns.append(tf.feature_column.categorical_column_with_hash_bucket(key='Ticket',hash_bucket_size=))
+#     # Fare 数值列
+#     feature_columns.append(
+#         tf.feature_column.numeric_column(key='Fare', normalizer_fn=lambda x: (x - mean_fare) / std_fare))
+#     # Embarked 分类词汇列
+#     feature_columns.append(tf.feature_column.indicator_column(
+#         tf.feature_column.categorical_column_with_vocabulary_list(key='Embarked', vocabulary_list=['C', 'S', 'Q'])))
+
+def generator(data, lables, batch_size):
+    idx = np.arange(len(data))
+    print(len(data))
+    np.random.shuffle(idx)
+    print(data.columns)
+    batchs = [idx[range(batch_size * i, min(len(data), batch_size * (i + 1)))] for i in
+              range(int(len(data) / batch_size + 1))]
+    while True:
+        for i in batchs:
+            xx = data.loc[i, :]
+            yy = lables.loc[i]
+            yield (xx, yy)
+
+
 if __name__ == '__main__':
     kerasModel = model()
-    estimator = convertModel(kerasModel)
+    # estimator = convertModel(kerasModel)
     data_train = loadData(is_train=True, dir=DIR_TRAIN)
     data_train, _ = progressData(data_train)
     y = data_train.pop('Survived')
@@ -88,7 +125,13 @@ if __name__ == '__main__':
 
     X_train, X_test, y_train, y_test = splitData(data_train, y, 0.2)
 
-    input_fn_train = tf.estimator.inputs.pandas_input_fn(X_train, y_train, batch_size=128, num_epochs=1000,
-                                                         shuffle=True)
+    a = generator(X_train, y_train, 10)
+    # kerasModel.fit_generator()
+    for i in range(2):
+        xx,yy = a.__next__()
+        print(xx)
 
-    estimator.train(input_fn=input_fn_train, steps=1000)
+    # input_fn_train = tf.estimator.inputs.pandas_input_fn(X_train, y_train, batch_size=128, num_epochs=1000,
+    #                                                      shuffle=True)
+    #
+    # estimator.train(input_fn=input_fn_train, steps=1000)
